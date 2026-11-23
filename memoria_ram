@@ -1,0 +1,97 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity memoria_ram is
+    port (
+        CLK          : in  STD_LOGIC;
+
+        -- DIRECCION
+        S1           : in  STD_LOGIC;
+        S0           : in  STD_LOGIC;
+
+        -- DATOS
+        DATA_IN      : in  STD_LOGIC_VECTOR(3 downto 0);
+
+        -- HABILITACION
+        CARGAR       : in  STD_LOGIC;
+
+        -- SALIDA DE MEMORIA
+        DATA_OUT     : out STD_LOGIC_VECTOR(3 downto 0)
+    );
+end memoria_ram;
+
+architecture Behavioral of memoria_ram is
+
+    signal REG0 : STD_LOGIC_VECTOR(3 downto 0) := "0000";
+    signal REG1 : STD_LOGIC_VECTOR(3 downto 0) := "0000";
+    signal REG2 : STD_LOGIC_VECTOR(3 downto 0) := "0000";
+    signal REG3 : STD_LOGIC_VECTOR(3 downto 0) := "0000";
+
+    signal ADDRESS : STD_LOGIC_VECTOR(1 downto 0);
+    signal MUX_OUT : STD_LOGIC_VECTOR(3 downto 0);
+
+begin
+
+    ADDRESS <= S1 & S0;
+
+    -- ESCRITURA DE DATOS
+    process(CLK)
+    begin
+
+        if rising_edge(CLK) then
+
+            if CARGAR = '1' then
+
+                case ADDRESS is
+
+                    when "00" =>
+                        REG0 <= DATA_IN;
+
+                    when "01" =>
+                        REG1 <= DATA_IN;
+
+                    when "10" =>
+                        REG2 <= DATA_IN;
+
+                    when "11" =>
+                        REG3 <= DATA_IN;
+
+                    when others =>
+                        null;
+
+                end case;
+
+            end if;
+
+        end if;
+
+    end process;
+
+    -- MULTIPLEXOR DE LECTURA
+    process(ADDRESS, REG0, REG1, REG2, REG3)
+    begin
+
+        case ADDRESS is
+
+            when "00" =>
+                MUX_OUT <= REG0;
+
+            when "01" =>
+                MUX_OUT <= REG1;
+
+            when "10" =>
+                MUX_OUT <= REG2;
+
+            when "11" =>
+                MUX_OUT <= REG3;
+
+            when others =>
+                MUX_OUT <= "0000";
+
+        end case;
+
+    end process;
+
+    DATA_OUT <= MUX_OUT;
+
+end Behavioral;
