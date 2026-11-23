@@ -1,0 +1,109 @@
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity top_ram is
+    port (
+
+        -- RELOJ
+        CLK : in STD_LOGIC;
+
+        -- DIP SWITCH DE DATOS
+        D3 : in STD_LOGIC;
+        D2 : in STD_LOGIC;
+        D1 : in STD_LOGIC;
+        D0 : in STD_LOGIC;
+
+        -- DIP SWITCH DE DIRECCION
+        S1 : in STD_LOGIC;
+        S0 : in STD_LOGIC;
+
+        -- PULSADORES
+        BTN_CARGAR  : in STD_LOGIC;
+        BTN_MOSTRAR : in STD_LOGIC;
+
+        -- LED EXTERNOS
+        LED3 : out STD_LOGIC;
+        LED2 : out STD_LOGIC;
+        LED1 : out STD_LOGIC;
+        LED0 : out STD_LOGIC
+
+    );
+end top_ram;
+
+
+architecture Structural of top_ram is
+
+    signal DATA_IN  : STD_LOGIC_VECTOR(3 downto 0);
+    signal DATA_RAM : STD_LOGIC_VECTOR(3 downto 0);
+    signal LED_DATA : STD_LOGIC_VECTOR(3 downto 0);
+
+    signal PULSE_CARGAR  : STD_LOGIC;
+    signal PULSE_MOSTRAR : STD_LOGIC;
+
+begin
+
+    -- DATOS DE ENTRADA INVERTIDOS
+    DATA_IN <= not (D3 & D2 & D1 & D0);
+
+
+    -- ANTIRREBOTE BOTON CARGAR
+    U1: entity work.antirrebote
+        generic map (
+            DEBOUNCE_CYCLES => 1000000
+        )
+        port map (
+            CLK       => CLK,
+            BTN_N     => BTN_CARGAR,
+            PULSE_OUT => PULSE_CARGAR
+        );
+
+
+    -- ANTIRREBOTE BOTON MOSTRAR
+    U2: entity work.antirrebote
+        generic map (
+            DEBOUNCE_CYCLES => 1000000
+        )
+        port map (
+            CLK       => CLK,
+            BTN_N     => BTN_MOSTRAR,
+            PULSE_OUT => PULSE_MOSTRAR
+        );
+
+
+    -- MEMORIA RAM
+    U3: entity work.memoria_ram
+        port map (
+            CLK      => CLK,
+
+            S1       => S1,
+            S0       => S0,
+
+            DATA_IN  => DATA_IN,
+
+            CARGAR   => PULSE_CARGAR,
+
+            DATA_OUT => DATA_RAM
+        );
+
+
+    -- CONTROL DE VISUALIZACION
+    U4: entity work.control_visualizacion
+        port map (
+            CLK       => CLK,
+
+            HABILITAR => PULSE_MOSTRAR,
+
+            DATA_RAM  => DATA_RAM,
+
+            LED       => LED_DATA
+        );
+
+
+    -- SALIDAS LED
+    LED3 <= LED_DATA(3);
+    LED2 <= LED_DATA(2);
+    LED1 <= LED_DATA(1);
+    LED0 <= LED_DATA(0);
+
+end Structural;
